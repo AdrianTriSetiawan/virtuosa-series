@@ -1,0 +1,11 @@
+{
+  "name": "virtuosa-series",
+  "version": "0.1.0",
+  "description": "for support my old keyboard vx5 😉",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --hot index.html",
+    "build": "bun build ./src/app.js --outdir ./dist --minify"
+  }
+}

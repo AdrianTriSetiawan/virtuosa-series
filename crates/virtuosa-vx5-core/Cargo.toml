@@ -1,0 +1,11 @@
+[package]
+name = "virtuosa-vx5-core"
+version = "0.1.0"
+edition = "2021"
+description = "for support my old keyboard vx5 😉"
+
+[dependencies]
+hidapi = "2.6"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "2.0"

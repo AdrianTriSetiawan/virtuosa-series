@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Virtuosa Series &bull; for support my old keyboard vx5 😉</title>
+  <link rel="stylesheet" href="./src/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-[#0b0d13] text-[#e2e8f0] font-sans min-h-screen flex flex-col select-none antialiased">
+  <!-- Top Navigation Bar -->
+  <header class="h-16 border-b border-[#1e2333] bg-[#0f121d]/80 backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center font-black tracking-wider text-white shadow-lg shadow-cyan-500/20">
+        VS
+      </div>
+      <div>
+        <h1 class="text-sm font-bold tracking-wide text-white uppercase flex items-center gap-2">
+          Virtuosa Series <span class="text-xs px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800/50">VX5 Pro 60%</span>
+        </h1>
+        <p class="text-[10px] text-gray-400 font-mono">for support my old keyboard vx5 😉 &bull; VID: 0x258A | PID: 0x0016</p>
+      </div>
+    </div>
+
+    <!-- Active Profile & Hardware Status -->
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#141826] border border-[#23293d]">
+        <span class="text-xs text-gray-400 font-medium">Profile:</span>
+        <select id="profile-selector" class="bg-transparent text-xs font-semibold text-cyan-400 focus:outline-none cursor-pointer">
+          <option value="default" class="bg-[#141826] text-white">Profile 1 (Default / FPS)</option>
+          <option value="moba" class="bg-[#141826] text-white">Profile 2 (MOBA / Typing)</option>
+          <option value="custom" class="bg-[#141826] text-white">Profile 3 (Custom SOCD)</option>
+        </select>
+      </div>
+
+      <!-- Connection Badges & Actions -->
+      <div id="conn-status-badge" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-950/40 border border-red-800/50 text-red-400 text-xs font-medium">
+        <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+        <span id="conn-status-text">Disconnected</span>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button id="btn-webhid" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 hover:border-cyan-400 transition-all flex items-center gap-1.5 shadow-sm">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          Connect WebHID
+        </button>
+        <button id="btn-daemon" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#1a2030] hover:bg-[#252d42] text-gray-300 border border-[#2b334d] transition-all flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"/></svg>
+          Rust Daemon
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main View Grid -->
+  <main class="flex-1 flex flex-col p-6 max-w-7xl mx-auto w-full gap-6">
+    <!-- Visual 60% Keyboard Canvas Section -->
+    <section class="bg-[#111420] border border-[#1e2336] rounded-2xl p-6 shadow-2xl relative overflow-hidden flex flex-col items-center">
+      <div class="w-full flex items-center justify-between mb-4">
+        <div class="flex items-center gap-3">
+          <span class="text-xs uppercase tracking-wider font-bold text-gray-400">Interactive 60% Matrix (ANSI 61-Key)</span>
+          <span class="text-[11px] px-2 py-0.5 rounded bg-indigo-950/60 border border-indigo-800/40 text-indigo-300">Live Preview</span>
+        </div>
+        <div class="flex items-center gap-3 text-xs text-gray-400">
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-cyan-500/40 border border-cyan-400 inline-block"></span> Selected</span>
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-amber-500/30 border border-amber-400 inline-block"></span> Remapped</span>
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-emerald-500/30 border border-emerald-400 inline-block"></span> Snap-Tap / SOCD</span>
+        </div>
+      </div>
+
+      <!-- Keyboard Chassis -->
+      <div id="keyboard-case" class="bg-[#090b11] p-4 rounded-xl border border-[#262c42] shadow-inner shadow-black/80 flex flex-col gap-1.5 w-full max-w-[940px]">
+        <div id="keyboard-grid" class="flex flex-col gap-1.5 w-full"></div>
+      </div>
+
+      <div class="mt-4 flex items-center justify-between w-full max-w-[940px] text-xs text-gray-400 font-mono">
+        <div>Active Key: <span id="active-key-name" class="font-bold text-cyan-400">None (Click a key)</span></div>
+        <div id="active-key-detail" class="text-gray-500">Code: -- | Layer: Base (L0)</div>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <nav class="flex items-center gap-2 border-b border-[#1f2438] pb-1">
+      <button class="nav-tab px-4 py-2 rounded-lg text-xs font-bold transition-all text-cyan-400 bg-cyan-950/40 border border-cyan-800/40" data-tab="tab-remapper">
+        Key Remapper
+      </button>
+      <button class="nav-tab px-4 py-2 rounded-lg text-xs font-bold transition-all text-gray-400 hover:text-gray-200" data-tab="tab-socd">
+        Snap Tap & SOCD
+      </button>
+      <button class="nav-tab px-4 py-2 rounded-lg text-xs font-bold transition-all text-gray-400 hover:text-gray-200" data-tab="tab-tapdance">
+        Dual-Action / Tap-Dance
+      </button>
+      <button class="nav-tab px-4 py-2 rounded-lg text-xs font-bold transition-all text-gray-400 hover:text-gray-200" data-tab="tab-rgb">
+        RGB Studio
+      </button>
+      <button class="nav-tab px-4 py-2 rounded-lg text-xs font-bold transition-all text-gray-400 hover:text-gray-200" data-tab="tab-macros">
+        Macro Engine
+      </button>
+      <button class="nav-tab px-4 py-2 rounded-lg text-xs font-bold transition-all text-gray-400 hover:text-gray-200" data-tab="tab-profiles">
+        Profiles & Storage
+      </button>
+    </nav>
+
+    <!-- Tab Contents Container -->
+    <div class="flex-1 bg-[#111420] border border-[#1e2336] rounded-2xl p-6 min-h-[320px]">
+      <!-- TAB 1: Key Remapper -->
+      <section id="tab-remapper" class="tab-pane flex flex-col gap-6">
+        <div class="flex items-center justify-between border-b border-[#1f2538] pb-4">
+          <div>
+            <h2 class="text-base font-bold text-white">Visual Key Remapper</h2>
+            <p class="text-xs text-gray-400">Reassign scancodes, media controls, modifier swaps, or layer shifts.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="btn-reset-key" class="px-3 py-1.5 rounded-lg text-xs bg-[#191f30] hover:bg-[#232b42] text-gray-300 border border-[#262f49]">Reset Selected</button>
+            <button id="btn-apply-remap" class="px-3 py-1.5 rounded-lg text-xs bg-cyan-600 hover:bg-cyan-500 font-semibold text-white shadow-lg shadow-cyan-600/20">Save Key Binding</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="bg-[#0b0e17] p-4 rounded-xl border border-[#1b2133] flex flex-col gap-4">
+            <span class="text-xs font-semibold text-gray-300 uppercase tracking-wider">Target Key</span>
+            <div class="p-3 rounded-lg bg-[#141826] border border-[#232a40] flex items-center justify-between">
+              <span id="remap-target-label" class="text-sm font-bold text-cyan-400">CapsLock</span>
+              <span id="remap-target-scancode" class="text-xs font-mono text-gray-400">0x39 (57)</span>
+            </div>
+            <div class="flex flex-col gap-2">
+              <label class="text-xs text-gray-400">Action Type</label>
+              <select id="remap-type-select" class="bg-[#141826] border border-[#232a40] text-xs rounded-lg p-2.5 text-white focus:border-cyan-500 focus:outline-none">
+                <option value="standard">Standard Keystroke</option>
+                <option value="modifier">Modifier / Meta Key</option>
+                <option value="layer">Layer Switch (Fn1/Fn2)</option>
+                <option value="media">Multimedia & Volume</option>
+                <option value="disable">Disabled / No-Op</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="md:col-span-2 bg-[#0b0e17] p-4 rounded-xl border border-[#1b2133] flex flex-col gap-3">
+            <span class="text-xs font-semibold text-gray-300 uppercase tracking-wider">Quick Preset Functions</span>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" id="remap-presets-grid"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: Snap Tap / SOCD -->
+      <section id="tab-socd" class="tab-pane hidden flex flex-col gap-6">
+        <div class="flex items-center justify-between border-b border-[#1f2538] pb-4">
+          <div>
+            <h2 class="text-base font-bold text-white">Snap Tap / SOCD Resolution (Simultaneous Opposite Cardinal Direction)</h2>
+            <p class="text-xs text-gray-400">Eliminate counter-strafing delays by dynamically prioritizing conflicting movement inputs.</p>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="socd-toggle" class="sr-only peer" checked>
+            <div class="w-11 h-6 bg-[#1f2538] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+            <span class="ml-3 text-xs font-bold text-emerald-400" id="socd-state-text">Enabled</span>
+          </label>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="bg-[#0b0e17] p-4 rounded-xl border border-[#1b2133] flex flex-col gap-4">
+            <span class="text-xs font-semibold text-gray-300 uppercase tracking-wider">Priority Algorithm</span>
+            <div class="flex flex-col gap-2">
+              <label class="flex items-center gap-3 p-3 rounded-lg bg-[#141826] border border-[#232a40] cursor-pointer hover:border-cyan-500/50">
+                <input type="radio" name="socd-mode" value="last_priority" checked class="text-cyan-500 focus:ring-0">
+                <div>
+                  <div class="text-xs font-bold text-white">Last-Win Priority (Snap Tap)</div>
+                  <div class="text-[11px] text-gray-400">Latest pressed direction overrides previous instantly.</div>
+                </div>
+              </label>
+              <label class="flex items-center gap-3 p-3 rounded-lg bg-[#141826] border border-[#232a40] cursor-pointer hover:border-cyan-500/50">
+                <input type="radio" name="socd-mode" value="neutral" class="text-cyan-500 focus:ring-0">
+                <div>
+                  <div class="text-xs font-bold text-white">True Neutral</div>
+                  <div class="text-[11px] text-gray-400">Pressing both releases both (A + D = 0).</div>
+                </div>
+              </label>
+              <label class="flex items-center gap-3 p-3 rounded-lg bg-[#141826] border border-[#232a40] cursor-pointer hover:border-cyan-500/50">
+                <input type="radio" name="socd-mode" value="absolute_priority" class="text-cyan-500 focus:ring-0">
+                <div>
+                  <div class="text-xs font-bold text-white">First Input Priority</div>
+                  <div class="text-[11px] text-gray-400">Original key holds authority until released.</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="bg-[#0b0e17] p-4 rounded-xl border border-[#1b2133] flex flex-col gap-4">
+            <span class="text-xs font-semibold text-gray-300 uppercase tracking-wider">Opposing Key Pairs</span>
+            <div class="flex flex-col gap-3">
+              <div class="flex items-center justify-between p-3 rounded-lg bg-[#141826] border border-[#232a40]">
+                <span class="text-xs font-medium text-gray-300">Strafe Pair</span>
+                <span class="text-xs font-bold text-cyan-400 px-2 py-1 bg-cyan-950/60 rounded border border-cyan-800/40">Key A & Key D</span>
+              </div>
+              <div class="flex items-center justify-between p-3 rounded-lg bg-[#141826] border border-[#232a40]">
+                <span class="text-xs font-medium text-gray-300">Forward/Back Pair</span>
+                <span class="text-xs font-bold text-cyan-400 px-2 py-1 bg-cyan-950/60 rounded border border-cyan-800/40">Key W & Key S</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-[#0b0e17] p-4 rounded-xl border border-[#1b2133] flex flex-col gap-4">
+            <span class="text-xs font-semibold text-gray-300 uppercase tracking-wider">Debounce & Threshold</span>
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-gray-400">SOCD Latency Filter:</span>
+                <span id="debounce-val" class="font-mono text-cyan-400 font-bold">1 ms</span>
+              </div>
+              <input type="range" id="debounce-slider" min="0" max="15" value="1" class="w-full accent-cyan-400 cursor-pointer">
+            </div>
+            <div class="p-3 rounded-lg bg-emerald-950/30 border border-emerald-800/30 text-emerald-300 text-xs">
+              <strong>Virtuosa Hardware Mode:</strong> Zero microsecond hardware latching simulated for instant direction shift.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: Dual-Action / Tap-Dance -->
+      <section id="tab-tapdance" class="tab-pane hidden flex flex-col gap-6">
+        <div class="flex items-center justify-between border-b border-[#1f2538] pb-4">
+          <div>
+            <h2 class="text-base font-bold text-white">Dual-Action / Tap-Dance Engine</h2>
+            <p class="text-xs text-gray-400">Execute distinct operations based on tap vs hold durations (e.g. Tap = Escape, Hold = Left Control).</p>
+          </div>
+          <button id="btn-add-tapdance" class="px-3 py-1.5 rounded-lg text-xs bg-cyan-600 hover:bg-cyan-500 font-semibold text-white shadow-lg shadow-cyan-600/20">
+            + New Tap-Dance Rule
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="tapdance-rules-container"></div>
+      </section>
+
+      <!-- TAB 4: RGB Studio -->
+      <section id="tab-rgb" class="tab-pane hidden flex flex-col gap-6">
+        <div class="flex items-center justify-between border-b border-[#1f2538] pb-4">
+          <div>
+            <h2 class="text-base font-bold text-white">RGB Lighting Studio</h2>
+            <p class="text-xs text-gray-400">Control per-key backlight effects, animation speeds, and palette gradients.</p>
+          </div>
+          <button id="btn-apply-rgb" class="px-3 py-1.5 rounded-lg text-xs bg-cyan-600 hover:bg-cyan-500 font-semibold text-white shadow-lg shadow-cyan-600/20">Sync Lighting to Device</button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="bg-[#0b0e17] p-4 rounded-xl border border-[#1b2133] flex flex-col gap-3">
+            <span class="text-xs font-semibold text-gray-300 uppercase tracking-wider">Lighting Mode</span>
+            <div class="flex flex-col gap-1.5" id="rgb-mode-selector">
+              <button class="rgb-mode-btn p-2.5 rounded-lg text-left text-xs font-medium bg-cyan-950/60 border border-cyan-800/50 text-cyan-300" data-mode="rainbow_wave">Rainbow Wave (Spectrum)</button>
+              <button class="rgb-mode-btn p-2.5 rounded-lg text-left text-xs font-medium bg-[#141826] border border-[#232a40] text-gray-300 hover:border-gray-600" data-mode="static_color">Static Color</button>
+              <button class="rgb-mode-btn p-2.5 rounded-lg text-left text-xs font-medium bg-[#141826] border border-[#232a40] text-gray-300 hover:border-gray-600" data-mode="breathing">Breathing / Pulse</button>
+              <button class="rgb-mode-btn p-2.5 rounded-lg text-left text-xs font-medium bg-[#141826] border border-[#232a40] text-gray-300 hover:border-gray-600" data-mode="trigger_reactive">Key Reactive (Ripple)</button>
+              <button class="rgb-mode-btn p-2.5 rounded-lg text-left text-xs font-medium bg-[#141826] border border-[#232a40] text-gray-300 hover:border-gray-600" data-mode="off">LEDs Off (Stealth)</button>
+            </div>
+          </div>
+
+          <div class="bg-[#0b0e17] p-4 rounded-xl border border-[#1b2133] flex flex-col gap-4">
+            <span class="text-xs font-semibold text-gray-300 uppercase tracking-wider">Palette & Tone</span>
+            <div class="flex items-center gap-4">
+              <input type="color" id="rgb-color-picker" value="#06b6d4" class="w-14 h-14 rounded-lg bg-transparent border-0 cursor-pointer">
+              <div class="flex flex-col gap-1">
+                <span class="text-xs text-gray-400">Current Hex:</span>
+                <span id="rgb-color-hex" class="font-mono text-sm font-bold text-cyan-400">#06B6D4</span>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2 pt-2">
+              <button class="palette-swatch w-6 h-6 rounded-md bg-[#06b6d4] border border-white/20" data-hex="#06b6d4"></button>
+              <button class="palette-swatch w-6 h-6 rounded-md bg-[#6366f1] border border-white/20" data-hex="#6366f1"></button>
+              <button class="palette-swatch w-6 h-6 rounded-md bg-[#ec4899] border border-white/20" data-hex="#ec4899"></button>
+              <button class="palette-swatch w-6 h-6 rounded-md bg-[#10b981] border border-white/20" data-hex="#10b981"></button>
+              <button class="palette-swatch w-6 h-6 rounded-md bg-[#f59e0b] border border-white/20" data-hex="#f59e0b"></button>
+              <button class="palette-swatch w-6 h-6 rounded-md bg-[#ef4444] border border-white/20" data-hex="#ef4444"></button>
+            </div>
+          </div>
+
+          <div class="bg-[#0b0e17] p-4 rounded-xl border border-[#1b2133] flex flex-col gap-4">
+            <span class="text-xs font-semibold text-gray-300 uppercase tracking-wider">Modifiers</span>
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-gray-400">Brightness:</span>
+                <span id="rgb-bright-val" class="font-mono text-cyan-400 font-bold">80%</span>
+              </div>
+              <input type="range" id="rgb-bright-slider" min="0" max="100" value="80" class="w-full accent-cyan-400 cursor-pointer">
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-gray-400">Animation Speed:</span>
+                <span id="rgb-speed-val" class="font-mono text-cyan-400 font-bold">5x</span>
+              </div>
+              <input type="range" id="rgb-speed-slider" min="1" max="10" value="5" class="w-full accent-cyan-400 cursor-pointer">
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: Macro Engine -->
+      <section id="tab-macros" class="tab-pane hidden flex flex-col gap-6">
+        <div class="flex items-center justify-between border-b border-[#1f2538] pb-4">
+          <div>
+            <h2 class="text-base font-bold text-white">Macro Timeline Editor</h2>
+            <p class="text-xs text-gray-400">Record and fine-tune sequence events with microsecond delay precision.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="btn-record-macro" class="px-3 py-1.5 rounded-lg text-xs bg-red-600 hover:bg-red-500 font-semibold text-white flex items-center gap-1.5 shadow-lg shadow-red-600/20">
+              <span class="w-2 h-2 rounded-full bg-white animate-ping"></span> Record
+            </button>
+            <button id="btn-save-macro" class="px-3 py-1.5 rounded-lg text-xs bg-cyan-600 hover:bg-cyan-500 font-semibold text-white">Save Macro</button>
+          </div>
+        </div>
+
+        <div class="bg-[#0b0e17] p-4 rounded-xl border border-[#1b2133] flex flex-col gap-4">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-gray-300 uppercase tracking-wider">Timeline Sequence (FPS Bunnyhop / Strafe)</span>
+            <div class="flex items-center gap-2 text-xs">
+              <span class="text-gray-400">Repeat Loop:</span>
+              <input type="number" value="1" min="1" max="99" class="w-12 bg-[#141826] border border-[#232a40] text-center rounded p-1 text-white">
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 overflow-x-auto pb-3 pt-1" id="macro-timeline">
+            <div class="flex items-center gap-2 shrink-0">
+              <div class="px-3 py-2 rounded-lg bg-[#141826] border border-cyan-800/50 flex flex-col items-center">
+                <span class="text-[10px] text-gray-400 uppercase">DOWN</span>
+                <span class="text-xs font-bold text-cyan-400">Space</span>
+              </div>
+              <span class="text-[10px] text-gray-500 font-mono">15ms &rarr;</span>
+              <div class="px-3 py-2 rounded-lg bg-[#141826] border border-gray-700/50 flex flex-col items-center">
+                <span class="text-[10px] text-gray-400 uppercase">UP</span>
+                <span class="text-xs font-bold text-gray-300">Space</span>
+              </div>
+              <span class="text-[10px] text-gray-500 font-mono">50ms &rarr;</span>
+              <div class="px-3 py-2 rounded-lg bg-[#141826] border border-cyan-800/50 flex flex-col items-center">
+                <span class="text-[10px] text-gray-400 uppercase">DOWN</span>
+                <span class="text-xs font-bold text-cyan-400">Key D</span>
+              </div>
+              <span class="text-[10px] text-gray-500 font-mono">20ms &rarr;</span>
+              <div class="px-3 py-2 rounded-lg bg-[#141826] border border-gray-700/50 flex flex-col items-center">
+                <span class="text-[10px] text-gray-400 uppercase">UP</span>
+                <span class="text-xs font-bold text-gray-300">Key D</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 6: Profiles & Storage -->
+      <section id="tab-profiles" class="tab-pane hidden flex flex-col gap-6">
+        <div class="flex items-center justify-between border-b border-[#1f2538] pb-4">
+          <div>
+            <h2 class="text-base font-bold text-white">Profile Manager & Export</h2>
+            <p class="text-xs text-gray-400">Export clean JSON configurations or import community configurations.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="btn-export-profile" class="px-3 py-1.5 rounded-lg text-xs bg-cyan-600 hover:bg-cyan-500 font-semibold text-white">Export JSON</button>
+            <button id="btn-import-profile" class="px-3 py-1.5 rounded-lg text-xs bg-[#191f30] hover:bg-[#232b42] text-gray-300 border border-[#262f49]">Import JSON</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-[#0b0e17] p-4 rounded-xl border border-[#1b2133] flex flex-col gap-3">
+            <span class="text-xs font-semibold text-gray-300 uppercase tracking-wider">Active Configuration JSON</span>
+            <textarea id="profile-json-preview" readonly class="w-full h-48 bg-[#07090e] border border-[#1e2336] rounded-lg p-3 font-mono text-[11px] text-cyan-300 focus:outline-none resize-none"></textarea>
+          </div>
+          <div class="bg-[#0b0e17] p-4 rounded-xl border border-[#1b2133] flex flex-col gap-3 justify-center">
+            <h3 class="text-sm font-bold text-white">Virtuosa Series: Zero-Cloud Privacy</h3>
+            <p class="text-xs text-gray-400 leading-relaxed">
+              for support my old keyboard vx5 😉 &mdash; Semua konfigurasi disimpan secara lokal dalam browser storage (IndexedDB/LocalStorage) atau disinkronkan langsung via Daemon Rust lokal tanpa ketergantungan akun cloud.
+            </p>
+            <div class="mt-2 flex items-center gap-2 text-xs text-emerald-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              Local-first Architecture Verified
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="border-t border-[#1a1f30] py-3 px-6 text-center text-xs text-gray-500 font-mono">
+    Virtuosa Series &bull; for support my old keyboard vx5 😉 &bull; Built with Bun &amp; Rust &bull; 1000Hz Polling Ready
+  </footer>
+
+  <script type="module" src="./src/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+/* Reset & typography */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+code, pre, .font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* 60% Keyboard Layout CSS */
+.key-row {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+}
+
+.key-cap {
+  height: 48px;
+  background: #141724;
+  border: 1px solid #23283c;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 5px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #cbd5e1;
+  box-shadow: 0 3px 0 #0d0f17, inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.12s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.key-cap:hover {
+  background: #1e2336;
+  border-color: #3b4461;
+  transform: translateY(-1px);
+}
+
+.key-cap:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #0d0f17;
+}
+
+.key-cap.selected {
+  border-color: #06b6d4;
+  background: #083344;
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.4), inset 0 0 8px rgba(6, 182, 212, 0.2);
+  color: #a5f3fc;
+}
+
+.key-cap.is-remapped {
+  border-color: #f59e0b;
+  background: #271a06;
+  color: #fde68a;
+}
+
+.key-cap.is-socd {
+  border-color: #10b981;
+  background: #042f20;
+  color: #6ee7b7;
+}
+
+.key-sub {
+  font-size: 9px;
+  color: #64748b;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Tab Switching */
+.tab-pane.hidden {
+  display: none !important;
+}
+
+/* Animations */
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-pulse {
+  animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

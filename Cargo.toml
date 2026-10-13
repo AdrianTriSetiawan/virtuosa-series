@@ -1,0 +1,6 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/virtuosa-vx5-core",
+    "crates/virtuosa-vx5-cli",
+]
