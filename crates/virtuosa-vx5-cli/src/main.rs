@@ -6,8 +6,9 @@ use std::fs;
 use std::path::PathBuf;
 
 use virtuosa_vx5_core::{
-    create_default_matrix, reset_fn_win, swap_fn_win, KeyboardProfile, VortexDevice,
-    MATRIX_INDEX_FN, MATRIX_INDEX_LWIN,
+    create_default_matrix, reset_fn_win, swap_fn_win, Ex1Device, Ex1DpiConfig, Ex1LedConfig,
+    Ex1LedMode, Ex1PollingRate, KeyboardProfile, VortexDevice, EX1_PID, EX1_VID, MATRIX_INDEX_FN,
+    MATRIX_INDEX_LWIN,
 };
 
 #[derive(Parser)]
@@ -35,6 +36,12 @@ enum Commands {
     SetLed {
         #[arg(short, long, default_value = "#00FFFF")]
         hex: String,
+        #[arg(short, long, default_value_t = 0)]
+        mode: u8,
+        #[arg(short, long, default_value_t = 5)]
+        brightness: u8,
+        #[arg(short, long, default_value_t = 5)]
+        speed: u8,
     },
     /// Export active configuration / profile to a JSON file
     ProfileExport {
@@ -45,6 +52,46 @@ enum Commands {
     ProfileImport {
         #[arg(short, long)]
         file: PathBuf,
+    },
+    /// Read raw 1032-byte active profile block from keyboard MCU
+    ReadRaw,
+    /// Inspect connected Tecware EX1 Mouse (VID: 0x1D57, PID: 0xFA61)
+    Ex1Inspect,
+    /// Set Tecware EX1 polling rate (125, 250, 500, or 1000 Hz) [Experimental]
+    Ex1Polling {
+        #[arg(short, long, default_value_t = 1000)]
+        hz: u16,
+        #[arg(long)]
+        experimental: bool,
+    },
+    /// Set Tecware EX1 RGB lighting (hex color, mode, brightness, speed) [Experimental]
+    Ex1Led {
+        #[arg(short, long, default_value = "#00FFFF")]
+        hex: String,
+        #[arg(short, long, default_value_t = 1)]
+        mode: u8,
+        #[arg(short, long, default_value_t = 5)]
+        brightness: u8,
+        #[arg(short, long, default_value_t = 5)]
+        speed: u8,
+        #[arg(long)]
+        experimental: bool,
+    },
+    /// Set Tecware EX1 DPI stage and debounce settings [Experimental]
+    Ex1Dpi {
+        #[arg(short, long, default_value_t = 800)]
+        dpi: u16,
+        #[arg(short, long, default_value_t = 4)]
+        debounce_ms: u8,
+        #[arg(long, default_value_t = true)]
+        motion_sync: bool,
+        #[arg(long)]
+        experimental: bool,
+    },
+    /// Send ping / sync report to Tecware EX1 [Experimental]
+    Ex1Ping {
+        #[arg(long)]
+        experimental: bool,
     },
 }
 
@@ -73,10 +120,7 @@ fn main() -> Result<()> {
             );
             let devices = VortexDevice::enumerate_devices(&api);
             if devices.is_empty() {
-                println!(
-                    "{}",
-                    "No matching Virtuosa / VX5 device detected.".yellow()
-                );
+                println!("{}", "No matching Virtuosa / VX5 device detected.".yellow());
                 println!("Make sure the keyboard is plugged in or check udev permissions.");
             } else {
                 for (i, dev) in devices.iter().enumerate() {
@@ -93,7 +137,10 @@ fn main() -> Result<()> {
         }
 
         Commands::Handshake => {
-            println!("{}", "Initiating handshake with Virtuosa Series VX5...".cyan());
+            println!(
+                "{}",
+                "Initiating handshake with Virtuosa Series VX5...".cyan()
+            );
             match VortexDevice::open_first(&api) {
                 Ok(dev) => {
                     dev.send_handshake()?;
@@ -174,33 +221,23 @@ fn main() -> Result<()> {
             }
         }
 
-        Commands::SetLed { hex } => {
-            let (r, g, b) = hex_to_rgb(&hex)?;
-            println!(
-                "Applying RGB static color: R={}, G={}, B={} ({})",
-                r,
-                g,
-                b,
-                hex.cyan()
+        Commands::SetLed {
+            hex,
+            mode,
+            brightness,
+            speed,
+        } => {
+            eprintln!(
+                "{}",
+                "LED write operations are suspended pending protocol specification reconciliation (GetProfile 136 bytes vs SetProfile 160 bytes)."
+                    .yellow()
+                    .bold()
             );
-
-            let red = [r; 132];
-            let green = [g; 132];
-            let blue = [b; 132];
-
-            match VortexDevice::open_first(&api) {
-                Ok(dev) => {
-                    dev.send_handshake()?;
-                    dev.write_led_matrix(&red, &green, &blue)?;
-                    println!(
-                        "{}",
-                        "✓ LED color matrix applied successfully!".green().bold()
-                    );
-                }
-                Err(e) => {
-                    println!("{} {}", "Device not connected:".yellow(), e);
-                }
-            }
+            println!(
+                "Requested parameters: Mode={}, Brightness={}, Speed={}, Hex={}",
+                mode, brightness, speed, hex
+            );
+            anyhow::bail!("LED hardware writes suspended pending protocol verification");
         }
 
         Commands::ProfileExport { out } => {
@@ -248,6 +285,190 @@ fn main() -> Result<()> {
                     }
                 }
             }
+        }
+        Commands::ReadRaw => {
+            println!("Reading active profile block from K816 MCU...");
+            let dev = VortexDevice::open_first(&api)?;
+            dev.send_handshake()?;
+            let data = dev.read_profile()?;
+            println!("Read {} bytes successfully! Opcode response: {:#04x}", data.len(), data[1]);
+            for i in 0..136 {
+                if i % 16 == 0 {
+                    print!("\n{:04x}: ", i);
+                }
+                print!("{:02x} ", data[i]);
+            }
+            println!("\n");
+        }
+
+        Commands::Ex1Inspect => {
+            println!(
+                "{}",
+                format!(
+                    "=== Scanning for Tecware EX1 (VID: {:#06x}, PID: {:#06x}) ===",
+                    EX1_VID, EX1_PID
+                )
+                .bold()
+                .cyan()
+            );
+            let devices = Ex1Device::enumerate_devices(&api);
+            if devices.is_empty() {
+                println!("{}", "No matching Tecware EX1 mouse detected.".yellow());
+                println!("Make sure the mouse is plugged in or check udev permissions.");
+            } else {
+                for (i, dev) in devices.iter().enumerate() {
+                    println!(
+                        "[{}] Path: {} | UsagePage: {:#06x} | Usage: {:#06x} | Interface: {}",
+                        i,
+                        dev.path().to_string_lossy().green(),
+                        dev.usage_page(),
+                        dev.usage(),
+                        dev.interface_number()
+                    );
+                }
+            }
+        }
+
+        Commands::Ex1Polling { hz, experimental } => {
+            if !experimental {
+                eprintln!(
+                    "{}",
+                    "⚠ Safety guard: EX1 write protocol is currently experimental."
+                        .yellow()
+                        .bold()
+                );
+                eprintln!(
+                    "Add {} to confirm and proceed with hardware write testing.",
+                    "--experimental".cyan()
+                );
+                return Ok(());
+            }
+            println!("Setting Tecware EX1 polling rate to {} Hz...", hz);
+            let rate = Ex1PollingRate::from_hz(hz).ok_or_else(|| {
+                anyhow::anyhow!(
+                    "Invalid polling rate: {} Hz (supported: 125, 250, 500, 1000)",
+                    hz
+                )
+            })?;
+            let dev = Ex1Device::open_first(&api)?;
+            dev.set_polling_rate(rate)?;
+            println!(
+                "{}",
+                format!("✓ Polling rate successfully set to {} Hz!", hz)
+                    .green()
+                    .bold()
+            );
+        }
+
+        Commands::Ex1Led {
+            hex,
+            mode,
+            brightness,
+            speed,
+            experimental,
+        } => {
+            if !experimental {
+                eprintln!(
+                    "{}",
+                    "⚠ Safety guard: EX1 write protocol is currently experimental."
+                        .yellow()
+                        .bold()
+                );
+                eprintln!(
+                    "Add {} to confirm and proceed with hardware write testing.",
+                    "--experimental".cyan()
+                );
+                return Ok(());
+            }
+            let (r, g, b) = hex_to_rgb(&hex)?;
+            let led_mode = match mode {
+                0 => Ex1LedMode::Off,
+                1 => Ex1LedMode::Static,
+                2 => Ex1LedMode::Breathing,
+                _ => Ex1LedMode::Neon,
+            };
+            let config = Ex1LedConfig {
+                mode: led_mode,
+                brightness,
+                speed,
+                red: r,
+                green: g,
+                blue: b,
+            };
+            println!(
+                "Applying LED configuration: color {}, mode {:?}, bright {}, speed {}...",
+                hex.cyan(),
+                led_mode,
+                brightness,
+                speed
+            );
+            let dev = Ex1Device::open_first(&api)?;
+            dev.set_led(&config)?;
+            println!(
+                "{}",
+                "✓ Tecware EX1 LED configuration applied!".green().bold()
+            );
+        }
+
+        Commands::Ex1Dpi {
+            dpi,
+            debounce_ms,
+            motion_sync,
+            experimental,
+        } => {
+            if !experimental {
+                eprintln!(
+                    "{}",
+                    "⚠ Safety guard: EX1 write protocol is currently experimental."
+                        .yellow()
+                        .bold()
+                );
+                eprintln!(
+                    "Add {} to confirm and proceed with hardware write testing.",
+                    "--experimental".cyan()
+                );
+                return Ok(());
+            }
+            println!(
+                "Configuring Tecware EX1: DPI {}, debounce {}ms, motion sync {}...",
+                dpi, debounce_ms, motion_sync
+            );
+            let mut config = Ex1DpiConfig::default();
+            config.stages[0] = dpi;
+            config.active_stage = 0;
+            config.debounce_ms = debounce_ms;
+            config.motion_sync = motion_sync;
+            let dev = Ex1Device::open_first(&api)?;
+            dev.set_dpi(&config)?;
+            println!(
+                "{}",
+                format!("✓ DPI ({}) and debounce settings applied!", dpi)
+                    .green()
+                    .bold()
+            );
+        }
+
+        Commands::Ex1Ping { experimental } => {
+            if !experimental {
+                eprintln!(
+                    "{}",
+                    "⚠ Safety guard: EX1 write protocol is currently experimental."
+                        .yellow()
+                        .bold()
+                );
+                eprintln!(
+                    "Add {} to confirm and proceed with hardware write testing.",
+                    "--experimental".cyan()
+                );
+                return Ok(());
+            }
+            println!("Sending ping / sync report to Tecware EX1...");
+            let dev = Ex1Device::open_first(&api)?;
+            dev.ping()?;
+            println!(
+                "{}",
+                "✓ Ping report (0x0C) acknowledged by mouse!".green().bold()
+            );
         }
     }
 

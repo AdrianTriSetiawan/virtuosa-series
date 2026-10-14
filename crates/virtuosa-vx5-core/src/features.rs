@@ -48,23 +48,12 @@ impl Default for SocdConfig {
 }
 
 /// Dynamic state tracker for an opposing key pair (e.g. A and D)
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct SocdPairState {
     pub key_a_pressed: bool,
     pub key_b_pressed: bool,
-    pub last_pressed: Option<char>, // 'A' or 'B'
+    pub last_pressed: Option<char>,  // 'A' or 'B'
     pub active_output: Option<char>, // None, 'A', or 'B'
-}
-
-impl Default for SocdPairState {
-    fn default() -> Self {
-        Self {
-            key_a_pressed: false,
-            key_b_pressed: false,
-            last_pressed: None,
-            active_output: None,
-        }
-    }
 }
 
 impl SocdPairState {
@@ -150,14 +139,12 @@ impl Default for KeyboardProfile {
             vid: crate::protocol::VORTEX_VID,
             pid: crate::protocol::VORTEX_PID,
             socd: SocdConfig::default(),
-            tap_dance: vec![
-                TapDanceRule {
-                    trigger_key: "CapsLock".to_string(),
-                    tap_action: "Escape".to_string(),
-                    hold_action: "ControlLeft".to_string(),
-                    hold_threshold_ms: 200,
-                },
-            ],
+            tap_dance: vec![TapDanceRule {
+                trigger_key: "CapsLock".to_string(),
+                tap_action: "Escape".to_string(),
+                hold_action: "ControlLeft".to_string(),
+                hold_threshold_ms: 200,
+            }],
             rgb: RgbConfig::default(),
             matrix: crate::matrix::create_default_matrix().to_vec(),
         }

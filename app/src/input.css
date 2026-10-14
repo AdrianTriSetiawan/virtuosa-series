@@ -1,0 +1,177 @@
+@import "tailwindcss";
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: #080a10;
+    color: #e2e8f0;
+    overflow-x: hidden;
+  }
+  code, pre, .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0d111a;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e2638;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2e3a55;
+}
+
+/* Realistic 3D Mechanical Keycaps */
+.key-row {
+  display: flex;
+  gap: 7px;
+  width: 100%;
+}
+
+.key-cap {
+  height: 52px;
+  background: linear-gradient(180deg, #1b2030 0%, #111522 100%);
+  border: 1px solid #283049;
+  border-bottom: 3px solid #090c14;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #cbd5e1;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.08s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.key-cap::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, transparent 100%);
+  border-radius: 7px 7px 0 0;
+  pointer-events: none;
+}
+
+.key-cap:hover {
+  background: linear-gradient(180deg, #242b40 0%, #161b2c 100%);
+  border-color: #3f4c72;
+  color: #f8fafc;
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 12px -2px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.key-cap:active, .key-cap.is-pressed {
+  transform: translateY(2px);
+  border-bottom-width: 1px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.6), inset 0 2px 4px rgba(0, 0, 0, 0.4);
+  background: linear-gradient(180deg, #0e121c 0%, #181d2c 100%);
+  color: #38bdf8;
+}
+
+.key-cap.selected {
+  border-color: #06b6d4;
+  border-bottom-color: #0891b2;
+  background: linear-gradient(180deg, #0e3b4a 0%, #06232d 100%);
+  box-shadow: 0 0 16px rgba(6, 182, 212, 0.4), inset 0 0 8px rgba(6, 182, 212, 0.3), 0 3px 0 #04181f;
+  color: #e0f2fe;
+}
+
+.key-cap.is-remapped {
+  border-color: #f59e0b;
+  border-bottom-color: #d97706;
+  background: linear-gradient(180deg, #382405 0%, #201402 100%);
+  color: #fef3c7;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.3), inset 0 0 6px rgba(245, 158, 11, 0.2);
+}
+
+.key-cap.is-socd {
+  border-color: #10b981;
+  border-bottom-color: #059669;
+  background: linear-gradient(180deg, #063c28 0%, #032015 100%);
+  color: #d1fae5;
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.35), inset 0 0 8px rgba(16, 185, 129, 0.25);
+}
+
+/* RGB Glow under keycap */
+.key-cap .rgb-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 7px;
+  opacity: 0.15;
+  pointer-events: none;
+  transition: opacity 0.2s ease, background 0.2s ease;
+}
+
+.key-cap:hover .rgb-glow {
+  opacity: 0.35;
+}
+
+.key-sub {
+  font-size: 9px;
+  color: #64748b;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+}
+
+/* Tab Switching */
+.tab-pane.hidden {
+  display: none !important;
+}
+
+/* Toast notifications */
+#toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #f8fafc;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 15px rgba(56, 189, 248, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: toast-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  pointer-events: auto;
+}
+
+@keyframes toast-in {
+  from { transform: translateY(16px) scale(0.95); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes toast-out {
+  from { transform: translateY(0) scale(1); opacity: 1; }
+  to { transform: translateY(12px) scale(0.95); opacity: 0; }
+}

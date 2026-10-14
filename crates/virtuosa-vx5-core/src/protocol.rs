@@ -60,6 +60,22 @@ pub fn build_key_matrix_report(matrix: &[u32; 256]) -> [u8; BULK_REPORT_SIZE] {
 
     report
 }
+/// Builds the 1032-byte write profile report (Opcode 0x03) used to commit EEPROM configuration.
+/// Byte 0: Report ID 0x06
+/// Byte 1: Opcode 0x03
+/// Byte 2..7: Zero padding
+/// Byte 8..143: 136-byte active profile block
+///
+/// WARNING: Unverified report layout. PROTOCOL_SPEC.md has an explicit conflict
+/// between GetProfile (136 bytes payload) and SetProfile (160 bytes: 32 Global +
+/// 64 Profile 1 + 64 Profile 2). Committing this on live hardware risks EEPROM corruption.
+pub fn build_write_profile_report(profile_block: &[u8; 136]) -> [u8; BULK_REPORT_SIZE] {
+    let mut report = [0u8; BULK_REPORT_SIZE];
+    report[0] = REPORT_ID_BULK;
+    report[1] = OPCODE_WRITE_PROFILE;
+    report[8..8 + 136].copy_from_slice(profile_block);
+    report
+}
 
 /// Builds the 1032-byte LED matrix report.
 /// Byte 0: Report ID 0x06
@@ -81,13 +97,14 @@ pub fn build_led_matrix_report(
     report[6] = 0x00;
     report[7] = 0x00;
 
-    // Plane 0: Red (132 bytes)
+    // Bank 0 (396 bytes)
     report[8..8 + 132].copy_from_slice(red);
-    // Plane 1: Green (132 bytes)
     report[8 + 132..8 + 264].copy_from_slice(green);
-    // Plane 2: Blue (132 bytes)
     report[8 + 264..8 + 396].copy_from_slice(blue);
-
+    // Bank 1 (396 bytes)
+    report[8 + 396..8 + 396 + 132].copy_from_slice(red);
+    report[8 + 396 + 132..8 + 396 + 264].copy_from_slice(green);
+    report[8 + 396 + 264..8 + 792].copy_from_slice(blue);
     report
 }
 
@@ -174,10 +191,16 @@ mod tests {
         assert_eq!(&report[8..12], &0x00000004u32.to_le_bytes());
         // Check index 11
         let offset_11 = 8 + (11 * 4);
-        assert_eq!(&report[offset_11..offset_11 + 4], &0x060000E3u32.to_le_bytes());
+        assert_eq!(
+            &report[offset_11..offset_11 + 4],
+            &0x060000E3u32.to_le_bytes()
+        );
         // Check index 83
         let offset_83 = 8 + (83 * 4);
-        assert_eq!(&report[offset_83..offset_83 + 4], &0x00000020u32.to_le_bytes());
+        assert_eq!(
+            &report[offset_83..offset_83 + 4],
+            &0x00000020u32.to_le_bytes()
+        );
     }
 
     #[test]

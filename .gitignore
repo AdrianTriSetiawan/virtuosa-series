@@ -2,7 +2,7 @@
 target/
 **/*.rs.bk
 *.pdb
-
+release-assets/
 # Node / Frontend
 node_modules/
 npm-debug.log*

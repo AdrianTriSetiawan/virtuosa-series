@@ -5,7 +5,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun run --hot index.html",
-    "build": "bun build ./src/app.js --outdir ./dist --minify"
+    "dev": "bun run ./server.js",
+    "start": "bun run ./server.js",
+    "build:css": "bunx tailwindcss -i ./src/input.css -o ./src/styles.css",
+    "build": "bun run build:css && bun build ./src/app.js --outdir ./dist --minify"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
+    "tailwindcss": "^4.3.3"
   }
 }
